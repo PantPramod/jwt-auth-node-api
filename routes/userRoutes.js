@@ -16,6 +16,13 @@ router.post('/register', userController.userRegisteration)
 
 router.post('/login', userController.userLogin)
 
+router.post('/sendUserPasswordResetEmail', userController.sendUserPasswordResetEmail)
+
+router.post('/userPasswordReset/:id/:token', userController.userPasswordReset)
+
+
+
+
 
 //protected route
 router.post('/changepassword', userController.changeUserPassword)

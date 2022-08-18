@@ -1,6 +1,7 @@
 import userModel from "../models/User.js";
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
+import transporter from "../config/emailConfig.js";
 
 
 class userController {
@@ -94,6 +95,70 @@ class userController {
 
     static loggedUser = async (req, res) => {
         res.send({ "user": req.user })
+    }
+
+    static sendUserPasswordResetEmail = async (req, res) => {
+        const { email } = req.body;
+
+        if (email) {
+
+            const user = await userModel.findOne({ email })
+            if (user) {
+
+                const secret = user._id + process.env.JWT_SECRET_KEY;
+
+                const token = jwt.sign({ userID: user._id }, secret, { expiresIn: "15m" });
+
+                const link = `http://localhost:3000/reset/${user._id}/${token}`
+                console.log(link);
+
+                let info = await transporter.sendMail({
+                    from: process.env.EMAIL_FROM,
+                    to:user.email,
+                    subject:"reset password......",
+                    html:`<a href=${link}>CLICK HERE</a> to reset your password`
+                })
+
+                res.send({ "status": "success", "message": "reset link sent , check ypur email ", info })
+
+
+            } else {
+                res.send({ "status": "failed", "message": "Email dosen't exist " })
+            }
+        } else {
+            res.send({ "status": "failed", "message": "All fields are required" })
+        }
+    }
+
+    static userPasswordReset = async (req, res) => {
+
+        const { password, password_confirmation } = req.body;
+        const { id, token } = req.params;
+
+        const user = await userModel.findById(id);
+
+        const new_secret = user._id + process.env.JWT_SECRET_KEY;
+
+        try {
+            jwt.verify(token, new_secret)
+            if (password && password_confirmation) {
+                if (password === password_confirmation) {
+                    const salt = await bcrypt.genSalt(10);
+                    const hashNewPassword = await bcrypt.hash(password, salt)
+
+                    await userModel.findByIdAndUpdate(user._id, {$set:{password:hashNewPassword}})
+
+                    res.send({ "status": "success", "message": "password reset successfully" })
+                } else {
+                    res.send({ "status": "failed", "message": "password and confirm password should be same" })
+                }
+            } else {
+                res.send({ "status": "failed", "message": "All fields are required" })
+            }
+        } catch (err) {
+            res.send({ "status": "failed", "message": "Invalid Token" })
+        }
+
     }
 }
 
