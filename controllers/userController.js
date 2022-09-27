@@ -12,7 +12,7 @@ class userController {
         const user = await userModel.findOne({ email })
         console.log("user", user)
         if (user) {
-            res.send({ "status": "failed", "message": "User already exist" })
+            res.status(409).send({ "status": "failed", "message": "User already exist" })
         } else {
             if (name && email && password && password_confirmation && tc) {
                 if (password === password_confirmation) {
@@ -34,14 +34,14 @@ class userController {
 
                         res.send({ "status": "success", "message": "user registered successfully", "token": token })
                     } catch (err) {
-                        res.send({ "status": "failed", "message": "Unable to register" })
+                        res.status(409).send({ "status": "failed", "message": "Unable to register" })
                     }
 
                 } else {
-                    res.send({ "status": "failed", "message": "passwor and confirm password dosen't match" })
+                    res.status(409).send({ "status": "failed", "message": "passwor and confirm password dosen't match" })
                 }
             } else {
-                res.send({ "status": "failed", "message": "All fields are required" })
+                res.status(409).send({ "status": "failed", "message": "All fields are required" })
             }
         }
     }
